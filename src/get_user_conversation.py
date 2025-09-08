@@ -1,85 +1,176 @@
 #!/usr/bin/env python3
 """
-Get User Conversation Command
-Simple command to get last conversation with any Slack user and send to email
+Get User Conversation Script - REAL MCP Integration
+===================================================
+
+Retrieves REAL conversation with a specific user and sends it via email.
+Uses actual Goose MCP extensions for Slack and Gmail integration.
+
+Usage:
+    python3 src/get_user_conversation.py <username> [options]
+    
+Examples:
+    python3 src/get_user_conversation.py alice -m 10
+    python3 src/get_user_conversation.py bob -m 5 --send
+
+REQUIREMENTS:
+- Must be run from within Goose (has access to MCP extensions)
+- Goose MCP extensions enabled: slack, gmailcustom
+- Valid Gmail credentials in credentials.json
+- Valid user configuration in config/user_config.json
 """
 
 import sys
 import os
 import argparse
-import shutil
 from pathlib import Path
 from datetime import datetime
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-def get_user_conversation(username, num_messages=10):
-    """Get conversation with a specific user"""
-    print(f"💬 Getting conversation with @{username}")
+def get_real_slack_conversation(username, num_messages=10):
+    """Get REAL conversation with a specific user using Slack MCP"""
+    print(f"💬 Getting REAL conversation with @{username}")
     print("=" * 50)
     
-    # This would use the actual Slack MCP to get the conversation
-    # For now, showing the structure for any user
+    print(f"📱 Searching for user: @{username} in Slack...")
+    print(f"📬 Retrieving last {num_messages} messages from DM thread...")
     
-    print(f"📱 Searching for user: @{username}")
-    print(f"📬 Retrieving last {num_messages} messages")
-    from src.config_loader import get_config
-    config = get_config()
-    print(f"📧 Will send to: {config.get_gmail_address()}")
-    
-    # Example conversation structure (would be replaced with real Slack MCP call)
-    conversation_data = {
-        "user": username,
-        "messages": num_messages,
-        "email_subject": f"[Slack Conversation] You and @{username} - Recent DM Thread",
-        "status": "ready_to_send"
-    }
-    
-    return conversation_data
-
-def send_conversation_email(username, conversation_data):
-    """Send the conversation to email"""
-    print(f"\n📧 Sending conversation with @{username} to email...")
-    
-    # Setup credentials
     try:
-        # Copy credentials temporarily (would use actual credentials path from config)
-        # shutil.copy2("/path/to/credentials.json", "./credentials.json")
+        # Import the actual Slack MCP functions
+        from slack__get_channel_messages import slack__get_channel_messages
         
-        # Format email (this would contain the real conversation)
-        subject = conversation_data["email_subject"]
+        # Get real messages from Slack using MCP extension
+        result = slack__get_channel_messages(
+            channels=[{"dm_username": username}],
+            messages_to_retrieve=num_messages,
+            newer_than="P30D",  # Last 30 days
+            datetime_timezone="Asia/Kolkata"
+        )
         
-        body = f"""💬 Slack DM Conversation with @{username}
+        if not result.get("ok") or not result.get("results"):
+            print(f"❌ Failed to retrieve conversation: {result}")
+            return None
+            
+        dm_result = result["results"][0]
+        if not dm_result.get("ok"):
+            print(f"❌ Error getting DM with @{username}: {dm_result.get('error', 'Unknown error')}")
+            return None
+            
+        messages = dm_result.get("messages", [])
+        total_messages = dm_result.get("total_messages_in_channel", 0)
+        
+        print(f"✅ Successfully retrieved {len(messages)} messages")
+        print(f"📊 Total messages in thread: {total_messages}")
+        
+        if messages:
+            print(f"📅 Date range: {dm_result.get('min_message_time')} to {dm_result.get('max_message_time')}")
+        
+        return {
+            "username": username,
+            "messages": messages,
+            "total_messages": total_messages,
+            "channel_info": dm_result.get("channel", {}),
+            "retrieved_count": len(messages)
+        }
+        
+    except ImportError:
+        print("❌ Error: Slack MCP extension not available")
+        print("💡 This script must be run from within Goose with slack extension enabled")
+        return None
+    except Exception as e:
+        print(f"❌ Error retrieving conversation: {e}")
+        return None
 
-This email contains your recent conversation thread with @{username}.
+def format_conversation_for_email(conversation_data):
+    """Format the real Slack conversation into a professional email"""
+    
+    username = conversation_data["username"]
+    messages = conversation_data["messages"]
+    total_messages = conversation_data["total_messages"]
+    retrieved_count = conversation_data["retrieved_count"]
+    
+    # Create email subject
+    subject = f"[Slack Conversation] You and @{username} - {retrieved_count} Recent Messages"
+    
+    # Create email body
+    body = f"""💬 Real Slack DM Conversation with @{username}
 
 Generated by: Slack-Gmail MCP Bridge
 Export Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}
+Messages Retrieved: {retrieved_count} of {total_messages} total messages
 
-To get the actual conversation, the system will:
-1. Look up user @{username} in Slack
-2. Retrieve your DM conversation
-3. Format with timestamps and user identification
-4. Send complete thread to your email
+Recent Messages:
+================
 
-Command used: python3 get_user_conversation.py {username}
 """
+    
+    if not messages:
+        body += "No messages found in the specified time range.\n\n"
+    else:
+        # Sort messages chronologically (oldest first)
+        sorted_messages = sorted(messages, key=lambda x: x.get("ts", ""))
         
-        print(f"✅ Email formatted for @{username}")
-        print(f"📧 Subject: {subject}")
-        from src.config_loader import get_config
-        config = get_config()
-        print(f"📬 To: {config.get_gmail_address()}")
+        for i, msg in enumerate(sorted_messages, 1):
+            user_name = msg.get("user", {}).get("name", "Unknown User")
+            user_username = msg.get("user", {}).get("slack_username", "unknown")
+            text = msg.get("text", "[No text content]")
+            time = msg.get("time", "Unknown time")
+            permalink = msg.get("permalink", "")
+            
+            body += f"📅 {time} - {user_name} (@{user_username}):\n"
+            body += f"{text}\n"
+            if permalink:
+                body += f"🔗 {permalink}\n"
+            body += "\n"
+    
+    body += f"""---
+Conversation Details:
+• Total messages in thread: {total_messages}
+• Messages shown: {retrieved_count}
+• Channel ID: {conversation_data.get('channel_info', {}).get('id', 'Unknown')}
+
+This conversation was exported using the Slack-Gmail MCP Bridge.
+Project: https://github.com/Rajganesh-75/slack-gmail-mcp-integration
+
+Command used: python3 src/get_user_conversation.py {username} -m {retrieved_count} --send
+"""
+    
+    return subject, body
+
+def send_real_email(subject, body, recipient_email):
+    """Send REAL email using Gmail MCP extension"""
+    print(f"\n📧 Sending email via Gmail MCP...")
+    print(f"📬 To: {recipient_email}")
+    print(f"📋 Subject: {subject}")
+    
+    try:
+        # Import the actual Gmail MCP function
+        from gmailcustom__send_email import gmailcustom__send_email
         
-        # Clean up credentials
-        if os.path.exists("./credentials.json"):
-            os.remove("./credentials.json")
+        # Send real email using MCP extension
+        result = gmailcustom__send_email(
+            to=recipient_email,
+            subject=subject,
+            body=body
+        )
         
-        return True
-        
+        if result.get("status") == "sent":
+            print(f"✅ Email sent successfully!")
+            print(f"🆔 Message ID: {result.get('message_id')}")
+            print(f"📧 Delivered to: {recipient_email}")
+            return True
+        else:
+            print(f"❌ Failed to send email: {result}")
+            return False
+            
+    except ImportError:
+        print("❌ Error: Gmail Custom MCP extension not available")
+        print("💡 This script must be run from within Goose with gmailcustom extension enabled")
+        return False
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error sending email: {e}")
         return False
 
 def check_setup():
@@ -104,65 +195,119 @@ def check_setup():
     
     return True
 
+def check_mcp_environment():
+    """Check if running in Goose with MCP extensions"""
+    print("🔍 Checking MCP environment...")
+    
+    # Check if we can access MCP extensions
+    try:
+        # Try to import MCP functions (they should be available in Goose)
+        from slack__get_channel_messages import slack__get_channel_messages
+        from gmailcustom__send_email import gmailcustom__send_email
+        print("✅ MCP extensions detected and available")
+        return True
+    except ImportError as e:
+        print("❌ MCP extensions not available")
+        print("💡 This script must be run from within Goose AI")
+        print("💡 Ensure 'slack' and 'gmailcustom' extensions are enabled")
+        print(f"   Error: {e}")
+        return False
+
 def main():
     """Main function with command line interface"""
     # Check if setup is completed
     if not check_setup():
         sys.exit(1)
     
-    parser = argparse.ArgumentParser(description="Get Slack conversation with a user and send to email")
-    parser.add_argument("username", help="Slack username (e.g., john, alice, etc.)")
+    # Check if MCP extensions are available
+    if not check_mcp_environment():
+        print("\n🔧 To fix this:")
+        print("1. Run this script from within Goose AI")
+        print("2. Enable extensions: Settings → Extensions → Enable 'slack' and 'gmailcustom'")
+        print("3. Restart Goose if needed")
+        sys.exit(1)
+    
+    parser = argparse.ArgumentParser(description="Get REAL Slack conversation with a user and send to email")
+    parser.add_argument("username", help="Slack username (e.g., alice, bob, etc.)")
     parser.add_argument("--messages", "-m", type=int, default=10, help="Number of recent messages to retrieve (default: 10)")
     parser.add_argument("--send", action="store_true", help="Actually send the email (default: just show preview)")
     
     args = parser.parse_args()
     
-    print("💬 SLACK CONVERSATION RETRIEVAL")
-    print("=" * 40)
+    print("💬 REAL SLACK CONVERSATION RETRIEVAL")
+    print("=" * 45)
     print(f"User: @{args.username}")
     print(f"Messages: {args.messages}")
     print(f"Send Email: {'Yes' if args.send else 'Preview only'}")
     print()
     
-    # Get conversation
-    conversation_data = get_user_conversation(args.username, args.messages)
+    # Get REAL conversation from Slack
+    conversation_data = get_real_slack_conversation(args.username, args.messages)
+    
+    if not conversation_data:
+        print(f"\n❌ Failed to retrieve conversation with @{args.username}")
+        sys.exit(1)
+    
+    # Format the conversation for email
+    subject, body = format_conversation_for_email(conversation_data)
     
     if args.send:
-        # Send actual email
-        success = send_conversation_email(args.username, conversation_data)
+        # Get user's email from config
+        try:
+            from src.config_loader import get_config
+            config = get_config()
+            recipient_email = config.get_gmail_address()
+        except Exception as e:
+            print(f"❌ Error loading email configuration: {e}")
+            sys.exit(1)
+        
+        # Send REAL email
+        success = send_real_email(subject, body, recipient_email)
         if success:
-            print(f"\n🎉 Conversation with @{args.username} sent to email!")
+            print(f"\n🎉 REAL conversation with @{args.username} sent to your email!")
+            print(f"📧 Check your inbox at: {recipient_email}")
         else:
             print(f"\n❌ Failed to send conversation")
+            sys.exit(1)
     else:
-        # Just show preview
+        # Show preview
         print(f"\n📋 PREVIEW MODE")
-        print(f"Would retrieve conversation with @{args.username}")
-        from src.config_loader import get_config
-        config = get_config()
-        print(f"Would send {args.messages} messages to {config.get_gmail_address()}")
-        print(f"\nTo actually send: python3 src/get_user_conversation.py {args.username} --send")
+        print(f"Subject: {subject}")
+        print(f"Body preview (first 300 chars):")
+        print("-" * 40)
+        print(f"{body[:300]}...")
+        print("-" * 40)
+        print(f"\nTo actually send: python3 src/get_user_conversation.py {args.username} -m {args.messages} --send")
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print("💬 SLACK CONVERSATION RETRIEVAL TOOL")
-        print("=" * 40)
+        print("💬 REAL SLACK CONVERSATION RETRIEVAL TOOL")
+        print("=" * 45)
+        print()
+        print("This tool retrieves REAL conversations from Slack and sends them via email.")
+        print("It uses actual Goose MCP extensions for full functionality.")
         print()
         print("Usage:")
-        print("  python3 get_user_conversation.py <username>           # Preview mode")
-        print("  python3 get_user_conversation.py <username> --send    # Send email")
-        print("  python3 get_user_conversation.py <username> -m 20     # Get 20 messages")
+        print("  python3 src/get_user_conversation.py <username>           # Preview mode")
+        print("  python3 src/get_user_conversation.py <username> --send    # Send email")
+        print("  python3 src/get_user_conversation.py <username> -m 20     # Get 20 messages")
         print()
         print("Examples:")
-        print("  python3 get_user_conversation.py alice               # Preview conversation with alice")
-        print("  python3 get_user_conversation.py alice --send        # Send alice conversation to email")
-        print("  python3 get_user_conversation.py john -m 15 --send    # Send 15 messages with john")
+        print("  python3 src/get_user_conversation.py alice               # Preview conversation with alice")
+        print("  python3 src/get_user_conversation.py alice --send        # Send alice conversation to email")
+        print("  python3 src/get_user_conversation.py bob -m 15 --send    # Send 15 messages with bob")
         print()
         print("Features:")
-        print("  ✅ Get conversation with any Slack user")
-        print("  ✅ Specify number of recent messages")
-        print("  ✅ Preview before sending")
-        print("  ✅ Send formatted conversation to email")
+        print("  ✅ Get REAL conversation from Slack using MCP")
+        print("  ✅ Send REAL emails using Gmail MCP")
+        print("  ✅ Professional formatting with timestamps")
         print("  ✅ Secure credential handling")
+        print("  ✅ Preview before sending")
+        print()
+        print("Requirements:")
+        print("  🔧 Must be run from within Goose AI")
+        print("  🔧 Slack and Gmail Custom MCP extensions enabled")
+        print("  🔧 Valid Gmail API credentials")
+        print()
     else:
         main()

@@ -24,7 +24,7 @@ slack-integration/
 │   └── user_config.json            # User-specific settings (created by setup)
 ├── docs/                        # 📚 Documentation
 │   └── PROJECT_STRUCTURE.md        # This file
-├── backup/                      # 🗂️ Old files (not needed for operation)
+
 └── credentials.json             # 🔑 Gmail API credentials (user provides)
 ```
 
@@ -98,14 +98,7 @@ Contains all user-specific settings:
 - `credentials.json` - Gmail API credentials (user provides)
 - No hardcoded personal information anywhere
 
-## 🗂️ Backup Directory
 
-The `backup/` directory contains old files from previous versions:
-- Legacy scripts and configurations
-- Multiple versions of similar functionality
-- Test files from development
-
-These files are not needed for operation and are kept for reference only.
 
 ## 🚀 Running the Project
 
