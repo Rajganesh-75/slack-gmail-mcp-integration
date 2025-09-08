@@ -11,6 +11,12 @@ from datetime import datetime
 import subprocess
 import sys
 import os
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.config_loader import get_config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,7 +27,13 @@ class SlackGmailMCPBridge:
     
     def __init__(self, config_path="slack_config.json"):
         """Initialize the MCP bridge"""
-        self.config = self.load_config(config_path)
+        try:
+            self.user_config = get_config()
+            self.config = self.get_merged_config()
+        except Exception as e:
+            logger.warning(f"Using legacy config: {e}")
+            self.config = self.load_config(config_path)
+        
         self.processed_messages = set()
         self.message_count = 0
         self.user_id = None
@@ -37,17 +49,42 @@ class SlackGmailMCPBridge:
             logger.error(f"❌ Error loading config: {e}")
             return self.get_default_config()
     
-    def get_default_config(self):
-        """Get default configuration"""
+    def get_merged_config(self):
+        """Get configuration from user config"""
         return {
             "gmail_mcp": {
                 "enabled": True,
-                "recipient_email": "rajganesh47@gmail.com",
+                "recipient_email": self.user_config.get_gmail_address(),
                 "check_interval": 30
             },
             "slack": {
-                "check_interval": 15,
-                "max_messages_per_check": 5,
+                "check_interval": self.user_config.get_check_interval(),
+                "max_messages_per_check": self.user_config.get_max_messages_per_check(),
+                "channels_to_monitor": [],  # Empty means all channels
+                "include_dms": self.user_config.should_monitor_dms(),
+                "include_threads": False,
+                "user_id": self.user_config.get_slack_user_id()
+            },
+            "integration": {
+                "enable_bidirectional": False,
+                "log_level": "INFO",
+                "max_message_length": 2000,
+                "monitor_mentions": self.user_config.should_monitor_mentions(),
+                "mention_keywords": self.user_config.get_mention_keywords()
+            }
+        }
+    
+    def get_default_config(self):
+        """Get default configuration (fallback)"""
+        return {
+            "gmail_mcp": {
+                "enabled": True,
+                "recipient_email": "user@example.com",
+                "check_interval": 30
+            },
+            "slack": {
+                "check_interval": 300,
+                "max_messages_per_check": 10,
                 "channels_to_monitor": [],  # Empty means all channels
                 "include_dms": True,
                 "include_threads": False
@@ -67,7 +104,7 @@ class SlackGmailMCPBridge:
             # This would use the Slack MCP extension
             # For now, we'll simulate the call
             logger.info("✅ Slack MCP extension is available")
-            logger.info("📱 Connected as: Rajganesh V (rajganesh@squareup.com)")
+            logger.info("📱 Connected to Slack workspace")
             return True
         except Exception as e:
             logger.error(f"❌ Slack MCP connection failed: {e}")
@@ -80,7 +117,7 @@ class SlackGmailMCPBridge:
         try:
             # This would use the Gmail Custom MCP extension
             logger.info("📧 Gmail Custom MCP extension is available")
-            logger.info("📬 Target email: rajganesh47@gmail.com")
+            logger.info(f"📬 Target email: {self.config['gmail_mcp']['recipient_email']}")
             return True
         except Exception as e:
             logger.error(f"❌ Gmail MCP connection failed: {e}")
@@ -283,9 +320,35 @@ Message ID: {slack_msg['id']}
         print("💡 Run with --live flag to send real emails")
         return True
 
+def check_setup():
+    """Check if the project is properly set up"""
+    from pathlib import Path
+    
+    config_path = Path("config/user_config.json")
+    if not config_path.exists():
+        print("❌ SETUP REQUIRED")
+        print("=" * 20)
+        print("This appears to be your first time using this project.")
+        print("Please run the setup first:")
+        print()
+        print("  python3 first_run_setup.py")
+        print()
+        print("This will guide you through:")
+        print("• Email configuration")
+        print("• Slack workspace setup") 
+        print("• Gmail API credentials")
+        print("• Goose MCP extensions")
+        return False
+    
+    return True
+
 def main():
     """Main function"""
     import argparse
+    
+    # Check if setup is completed
+    if not check_setup():
+        sys.exit(1)
     
     parser = argparse.ArgumentParser(description="Slack-Gmail MCP Bridge")
     parser.add_argument("--live", action="store_true", help="Run in live mode (send real emails)")

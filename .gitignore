@@ -1,6 +1,8 @@
 # Credentials and sensitive files
 credentials.json
 token.json
+config/user_config.json
+config/slack_token.env
 *.credentials
 *.key
 *.pem
@@ -37,6 +39,11 @@ Thumbs.db
 *.log
 logs/
 
-# Test files
-test_*.py
-*_test.py
+# Archive and backup files
+archive/
+*.backup
+*.bak
+
+# Keep test files for open source project
+# test_*.py
+# *_test.py

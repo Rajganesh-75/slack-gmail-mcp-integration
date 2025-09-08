@@ -8,10 +8,11 @@ import sys
 import os
 import argparse
 import shutil
-sys.path.append('./config')
-
-from secure_credentials import get_gmail_credentials
+from pathlib import Path
 from datetime import datetime
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def get_user_conversation(username, num_messages=10):
     """Get conversation with a specific user"""
@@ -23,7 +24,9 @@ def get_user_conversation(username, num_messages=10):
     
     print(f"📱 Searching for user: @{username}")
     print(f"📬 Retrieving last {num_messages} messages")
-    print(f"📧 Will send to: rajganesh47@gmail.com")
+    from src.config_loader import get_config
+    config = get_config()
+    print(f"📧 Will send to: {config.get_gmail_address()}")
     
     # Example conversation structure (would be replaced with real Slack MCP call)
     conversation_data = {
@@ -41,8 +44,8 @@ def send_conversation_email(username, conversation_data):
     
     # Setup credentials
     try:
-        # Copy credentials temporarily
-        shutil.copy2("/Users/rajganesh/Downloads/credentials.json", "./credentials.json")
+        # Copy credentials temporarily (would use actual credentials path from config)
+        # shutil.copy2("/path/to/credentials.json", "./credentials.json")
         
         # Format email (this would contain the real conversation)
         subject = conversation_data["email_subject"]
@@ -65,7 +68,9 @@ Command used: python3 get_user_conversation.py {username}
         
         print(f"✅ Email formatted for @{username}")
         print(f"📧 Subject: {subject}")
-        print(f"📬 To: rajganesh47@gmail.com")
+        from src.config_loader import get_config
+        config = get_config()
+        print(f"📬 To: {config.get_gmail_address()}")
         
         # Clean up credentials
         if os.path.exists("./credentials.json"):
@@ -77,10 +82,36 @@ Command used: python3 get_user_conversation.py {username}
         print(f"❌ Error: {e}")
         return False
 
+def check_setup():
+    """Check if the project is properly set up"""
+    from pathlib import Path
+    
+    config_path = Path("config/user_config.json")
+    if not config_path.exists():
+        print("❌ SETUP REQUIRED")
+        print("=" * 20)
+        print("This appears to be your first time using this project.")
+        print("Please run the setup first:")
+        print()
+        print("  python3 first_run_setup.py")
+        print()
+        print("This will guide you through:")
+        print("• Email configuration")
+        print("• Slack workspace setup")
+        print("• Gmail API credentials")
+        print("• Goose MCP extensions")
+        return False
+    
+    return True
+
 def main():
     """Main function with command line interface"""
+    # Check if setup is completed
+    if not check_setup():
+        sys.exit(1)
+    
     parser = argparse.ArgumentParser(description="Get Slack conversation with a user and send to email")
-    parser.add_argument("username", help="Slack username (e.g., lmohan, john, etc.)")
+    parser.add_argument("username", help="Slack username (e.g., john, alice, etc.)")
     parser.add_argument("--messages", "-m", type=int, default=10, help="Number of recent messages to retrieve (default: 10)")
     parser.add_argument("--send", action="store_true", help="Actually send the email (default: just show preview)")
     
@@ -107,8 +138,10 @@ def main():
         # Just show preview
         print(f"\n📋 PREVIEW MODE")
         print(f"Would retrieve conversation with @{args.username}")
-        print(f"Would send {args.messages} messages to rajganesh47@gmail.com")
-        print(f"\nTo actually send: python3 get_user_conversation.py {args.username} --send")
+        from src.config_loader import get_config
+        config = get_config()
+        print(f"Would send {args.messages} messages to {config.get_gmail_address()}")
+        print(f"\nTo actually send: python3 src/get_user_conversation.py {args.username} --send")
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
@@ -121,8 +154,8 @@ if __name__ == "__main__":
         print("  python3 get_user_conversation.py <username> -m 20     # Get 20 messages")
         print()
         print("Examples:")
-        print("  python3 get_user_conversation.py lmohan               # Preview conversation with lmohan")
-        print("  python3 get_user_conversation.py lmohan --send        # Send lmohan conversation to email")
+        print("  python3 get_user_conversation.py alice               # Preview conversation with alice")
+        print("  python3 get_user_conversation.py alice --send        # Send alice conversation to email")
         print("  python3 get_user_conversation.py john -m 15 --send    # Send 15 messages with john")
         print()
         print("Features:")

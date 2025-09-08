@@ -10,16 +10,16 @@ This document lists all the useful commands available in your Slack-Gmail integr
 python3 get_user_conversation.py <username> --send
 
 # Examples:
-python3 get_user_conversation.py lmohan --send          # Conversation with lmohan
-python3 get_user_conversation.py gunasekar --send       # Conversation with gunasekar
+python3 get_user_conversation.py alice --send          # Conversation with alice
+python3 get_user_conversation.py bob --send       # Conversation with bob
 python3 get_user_conversation.py alice --send           # Conversation with alice
 
 # Get more messages:
-python3 get_user_conversation.py lmohan -m 20 --send    # Get 20 messages
+python3 get_user_conversation.py alice -m 20 --send    # Get 20 messages
 python3 get_user_conversation.py john -m 15 --send      # Get 15 messages
 
 # Preview before sending:
-python3 get_user_conversation.py lmohan                 # Just preview
+python3 get_user_conversation.py alice                 # Just preview
 python3 get_user_conversation.py john -m 10             # Preview 10 messages
 ```
 
@@ -103,7 +103,7 @@ nano config/config.json
 ### **User Information**
 ```bash
 # Get user info
-slack__get_user_info --inputs '[{"username": "lmohan"}]'
+slack__get_user_info --inputs '[{"username": "alice"}]'
 
 # Get your own info
 slack__get_user_info --inputs '[{"username": "me"}]'
@@ -118,7 +118,7 @@ slack__list_channels --channel_types "public_channel,private_channel,im" --limit
 slack__get_channel_messages --channels '[{"channel_name": "engineering"}]' --messages_to_retrieve 5
 
 # Get DM messages
-slack__get_channel_messages --channels '[{"dm_username": "lmohan"}]' --messages_to_retrieve 10
+slack__get_channel_messages --channels '[{"dm_username": "alice"}]' --messages_to_retrieve 10
 ```
 
 ### **Search Messages**
@@ -127,7 +127,7 @@ slack__get_channel_messages --channels '[{"dm_username": "lmohan"}]' --messages_
 slack__search_messages --query_terms "jenkins" --count 10
 
 # Search messages from specific user
-slack__search_messages --filter '{"from_user_id_or_usernames": [{"username": "lmohan"}]}' --count 5
+slack__search_messages --filter '{"from_user_id_or_usernames": [{"username": "alice"}]}' --count 5
 ```
 
 ---
@@ -137,7 +137,7 @@ slack__search_messages --filter '{"from_user_id_or_usernames": [{"username": "lm
 ### **Email Operations**
 ```bash
 # Send email
-gmailcustom__send_email --to "rajganesh47@gmail.com" --subject "Test" --body "Test message"
+gmailcustom__send_email --to "your-email@example.com" --subject "Test" --body "Test message"
 
 # List recent emails
 gmailcustom__list_emails --count 10
@@ -242,7 +242,7 @@ ping gmail.com
 ### **Credential Management**
 ```bash
 # Check credential location
-ls -la /Users/rajganesh/Downloads/credentials.json
+ls -la ./credentials.json
 
 # Verify .gitignore
 cat .gitignore

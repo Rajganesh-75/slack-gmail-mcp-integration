@@ -1,151 +1,247 @@
-# Slack-Gmail Integration
+# Slack-Gmail MCP Bridge
 
-Bridge between Slack and Gmail using MCP (Model Context Protocol).
+A powerful integration tool that bridges Slack conversations to Gmail using Goose MCP (Model Context Protocol) extensions. Monitor your Slack workspace and receive important conversations directly in your email inbox.
+
+## 🚀 Features
+
+- **Real-time Slack Monitoring**: Monitor DMs, channel mentions, and specific channels
+- **Email Notifications**: Receive formatted Slack conversations via Gmail
+- **MCP Integration**: Uses Goose MCP extensions for seamless Slack and Gmail integration
+- **Configurable Filtering**: Set up custom keywords, channels, and notification preferences
+- **Conversation Retrieval**: Get specific conversations and send them to email on demand
+- **Secure Credentials**: Safe handling of Gmail API credentials and Slack tokens
+- **Open Source Ready**: No hardcoded personal information, fully configurable
+
+## 🛠️ Requirements
+
+- **Goose AI** with MCP extensions enabled
+- **Python 3.7+**
+- **Gmail API credentials**
+- **Slack workspace access**
+
+### Required Goose MCP Extensions
+- `slack` - For Slack integration
+- `gmailcustom` - For Gmail integration
+
+## 🚀 Quick Start
+
+### 1. First Time Setup
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd slack-integration
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the interactive setup (guides you through everything)
+python3 first_run_setup.py
+```
+
+The setup script will guide you through:
+- ✅ Checking Goose environment and extensions
+- ✅ Configuring your email settings
+- ✅ Setting up Slack workspace access
+- ✅ Gmail API credentials setup
+- ✅ Testing the complete integration
+
+### 2. Verify Setup
+
+```bash
+# Check if everything is configured correctly
+python3 check_requirements.py
+```
+
+### 3. Start Using
+
+```bash
+# Get a conversation and send to email
+python3 get_user_conversation.py username -m 15 --send
+
+# Start monitoring (test mode first)
+python3 slack_gmail_mcp_bridge.py --test
+```
+
+## 📦 Manual Installation (Alternative)
+
+If you prefer manual setup:
+
+1. **Install Python dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Configure manually**:
+   ```bash
+   python3 setup_config.py
+   ```
+
+3. **Set up Gmail API**:
+   - Get credentials from [Google Cloud Console](https://console.cloud.google.com/)
+   - Save as `credentials.json` in project root
+
+## ⚙️ Configuration
+
+The project uses `config/user_config.json` for all user settings:
+
+```json
+{
+  "user": {
+    "email_address": "your.email@example.com",
+    "slack_username": "your_slack_username",
+    "slack_workspace": "your-workspace"
+  },
+  "email": {
+    "preferences": {
+      "send_dm_summaries": true,
+      "send_channel_mentions": true,
+      "send_keyword_alerts": true
+    },
+    "keywords": ["urgent", "meeting", "deadline"]
+  },
+  "slack": {
+    "monitor_dms": true,
+    "monitor_mentions": true,
+    "channels_to_monitor": ["general", "team-updates"]
+  }
+}
+```
+
+## 🚀 Usage
+
+### Start Monitoring
+```bash
+# Test mode (safe, no emails sent)
+python3 slack_gmail_mcp_bridge.py --test
+
+# Live mode (sends real emails)
+python3 slack_gmail_mcp_bridge.py --live
+```
+
+### Get Specific Conversations
+```bash
+# Preview conversation
+python3 get_user_conversation.py username -m 15
+
+# Send conversation to email
+python3 get_user_conversation.py username -m 15 --send
+```
+
+### Validate Setup
+```bash
+# Check requirements and configuration
+python3 check_requirements.py
+
+# Test specific configuration
+python3 test_configuration.py
+```
+
+## 📋 Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `python3 first_run_setup.py` | **NEW**: Complete setup for new users |
+| `python3 check_requirements.py` | **NEW**: Validate all requirements |
+| `python3 slack_gmail_mcp_bridge.py --test` | Run monitoring in test mode |
+| `python3 slack_gmail_mcp_bridge.py --live` | Run monitoring with real emails |
+| `python3 get_user_conversation.py <user> --send` | Get and email a conversation |
+| `python3 setup_config.py` | Interactive configuration setup |
+| `python3 test_configuration.py` | Validate configuration |
+
+## 🔧 Troubleshooting
+
+### First-Time Users
+
+If you're new to the project, always start with:
+```bash
+python3 first_run_setup.py
+```
+
+### Common Issues
+
+1. **"Setup Required" Error**
+   - Run `python3 first_run_setup.py`
+   - This creates the necessary configuration files
+
+2. **MCP Extensions Not Found**
+   - Ensure Goose is running with `slack` and `gmailcustom` extensions enabled
+   - Check Goose settings → Extensions
+
+3. **Gmail API Errors**
+   - Verify `credentials.json` is valid and in the project root
+   - Check Gmail API is enabled in Google Cloud Console
+
+4. **Configuration Issues**
+   - Run `python3 check_requirements.py` for comprehensive diagnosis
+   - Re-run setup if needed
+
+### Getting Help
+
+- Run `python3 check_requirements.py` for detailed diagnostics
+- Check the `SETUP.md` file for detailed setup instructions
+- Review `COMMANDS.md` for all available commands
 
 ## 📁 Project Structure
 
 ```
 slack-integration/
-├── 🐍 slack_gmail_bridge.py           # Main bridge application
-├── 🐍 slack_desktop_gmail_bridge.py   # Desktop version with GUI integration
-├── 🐍 slack_gmail_integration_real.py # Production-ready version
-├── ⚙️ slack_config.json               # Slack API configuration
-├── ⚙️ slack_desktop_config.json       # Desktop app specific configuration
-├── 📦 slack_requirements.txt          # Python dependencies
-├── 📂 tests/                          # Test files
-├── 📂 config/                         # Configuration and setup
-├── 📂 utilities/                      # Shared utilities
-└── 📄 README.md                       # This file
+├── first_run_setup.py           # 🆕 Complete setup for new users
+├── check_requirements.py        # 🆕 Requirements validator
+├── slack_gmail_mcp_bridge.py    # Main monitoring script
+├── get_user_conversation.py     # Conversation retrieval tool
+├── setup_config.py              # Interactive setup
+├── test_configuration.py        # Configuration validator
+├── config_loader.py             # Configuration management
+├── config/
+│   ├── user_config.json         # User-specific settings
+│   └── config.json              # General configuration
+├── credentials.json             # Gmail API credentials (not in repo)
+├── requirements.txt             # Python dependencies
+├── README.md                    # This file
+├── SETUP.md                     # Detailed setup guide
+├── COMMANDS.md                  # Command reference
+└── LICENSE                      # MIT License
 ```
 
-## 🔧 Core Files
+## 🔐 Security & Privacy
 
-- **`slack_gmail_bridge.py`** - Main bridge application
-- **`slack_desktop_gmail_bridge.py`** - Desktop version with GUI integration
-- **`slack_gmail_integration_real.py`** - Production-ready version
-- `slack_config.json` - Slack API configuration
-- `slack_desktop_config.json` - Desktop app specific configuration
-- `slack_requirements.txt` - Python dependencies
+- **No hardcoded personal information** - Everything is configurable
+- **Gmail API credentials** stored locally, never committed to repository
+- **User configuration** is gitignored to protect personal settings
+- **Secure credential loading** with multiple fallback locations
+- **Open source ready** - Safe to share and contribute to
 
-## 🚀 Quick Start
+## 📄 License
 
-1. **Configure Slack API** credentials in `slack_config.json`
-2. **Install dependencies**: `pip install -r slack_requirements.txt`
-3. **Run main bridge**: `python slack_gmail_bridge.py`
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## ✨ Features
+## 🤝 Contributing
 
-- 💬 **Slack DM to Gmail forwarding** - Forward Slack direct messages to Gmail
-- 📧 **Gmail to Slack reply capability** - Reply to Slack messages from Gmail
-- ⚡ **Real-time message monitoring** - Live monitoring of Slack conversations
-- 🖥️ **Desktop app integration** - Works with Slack desktop application
-- 🔄 **Bidirectional messaging** - Two-way communication between platforms
-- 🎯 **Production-ready implementation** - Robust error handling and logging
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes (ensure no personal info is hardcoded)
+4. Test with `python3 check_requirements.py`
+5. Submit a pull request
 
-## 🧪 Testing
+## 🆕 What's New in Open Source Version
 
-Test files are located in the `tests/` directory:
-- `test_slack_dm_integration.py` - Basic Slack DM testing
-- `test_slack_dm_real.py` - Real-world Slack testing
-- `run_slack_dm_test.py` - Test runner
-
-```bash
-# Run tests
-cd tests/
-python test_slack_dm_integration.py
-```
-
-## ⚙️ Configuration
-
-### Slack API Setup
-Update `slack_config.json` with your Slack workspace details:
-```json
-{
-  "slack_token": "xoxb-your-slack-bot-token",
-  "channel_id": "your-channel-id",
-  "app_token": "xapp-your-app-token"
-}
-```
-
-### Desktop Integration
-For desktop app integration, configure `slack_desktop_config.json`:
-```json
-{
-  "desktop_integration": true,
-  "notification_settings": {
-    "enabled": true,
-    "sound": false
-  }
-}
-```
-
-## 📦 Installation
-
-1. **Clone or download** this repository
-2. **Install Python dependencies**:
-   ```bash
-   pip install -r slack_requirements.txt
-   ```
-3. **Configure Slack API** credentials (see Configuration section)
-4. **Set up Gmail MCP** integration (see config/ folder)
-
-## 🔗 Dependencies
-
-This integration relies on:
-- **Slack API** (via slack-sdk)
-- **Gmail MCP integration** (shared utility in config/)
-- **Real-time message monitoring**
-- **WebSocket connections** for live updates
-
-## 🛠️ Development
-
-### Project Structure
-- `config/` - Shared configuration files and setup scripts
-- `tests/` - Test files for Slack integration
-- `utilities/` - Shared utility functions
-
-### Adding Features
-1. Modify the appropriate bridge file (`slack_gmail_bridge.py` for main features)
-2. Add tests in the `tests/` directory
-3. Update configuration files as needed
-4. Update this README
-
-## 🔧 Utilities
-
-Located in `utilities/`:
-- `check_permissions.py` - Permission checker for Slack API
-
-## 📋 Configuration Files
-
-Located in `config/`:
-- `config.json` - Main configuration file
-- `token.json` - Authentication tokens
-- `requirements.txt` - Python dependencies
-- `setup_integration.py` - Setup script
-
-## 🚨 Important Notes
-
-- **API Limits**: Respect Slack API rate limits and terms of service
-- **MCP Dependency**: Requires Gmail MCP server to be running
-- **Security**: Keep configuration files secure and private
-- **Permissions**: Ensure proper Slack app permissions are configured
+- ✅ **Complete first-run setup experience**
+- ✅ **No hardcoded personal information**
+- ✅ **Interactive configuration wizard**
+- ✅ **Requirements validation system**
+- ✅ **Better error messages and guidance**
+- ✅ **Comprehensive documentation**
+- ✅ **MIT License for open source use**
 
 ## 📞 Support
 
-For issues:
-1. Check logs in the bridge applications
-2. Verify Slack API credentials and permissions
-3. Test Slack API connection separately
-4. Check Gmail MCP server status
-5. Review configuration files for errors
-
-## 🔐 Security
-
-- Store API tokens securely
-- Use environment variables for sensitive data
-- Regularly rotate API tokens
-- Monitor API usage and logs
+For issues and questions:
+1. Run `python3 check_requirements.py` for diagnostics
+2. Check the documentation files
+3. Ensure proper Goose MCP setup
+4. Review troubleshooting section
 
 ---
 
-**Note**: This integration uses official Slack APIs. Ensure compliance with Slack's terms of service and your organization's policies.
+**🚀 Ready to get started?** Run `python3 first_run_setup.py` and follow the interactive guide!
