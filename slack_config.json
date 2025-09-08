@@ -1,0 +1,23 @@
+{
+  "gmail_mcp": {
+    "enabled": true,
+    "recipient_email": "rajganesh47@gmail.com",
+    "check_interval": 30
+  },
+  "slack": {
+    "check_interval": 15,
+    "max_messages_per_check": 5,
+    "profile_path": "/tmp/slack_chrome_profile",
+    "workspaces": [],
+    "channels_to_monitor": [],
+    "include_dms": true,
+    "include_threads": false
+  },
+  "integration": {
+    "enable_bidirectional": false,
+    "log_level": "INFO",
+    "max_message_length": 2000,
+    "include_reactions": false,
+    "include_files": true
+  }
+}
